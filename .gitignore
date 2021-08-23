@@ -1,1 +1,15 @@
 /backup_lzw
+/cmake_backup
+/compress.cpp
+/compress.h
+/draft.cpp
+/.idea
+/qt.cpp
+/qt.h
+/rle_backup
+/gen.py
+/cmake-build-debug
+/fileio.cpp
+/fileio.h
+/lzw.h
+/lzw.cpp
