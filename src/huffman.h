@@ -4,7 +4,6 @@
 #include <string>
 #include <vector>
 #include <iostream>
-#include <set>
 #include <queue>
 #include "utils.h"
 
@@ -25,6 +24,9 @@ private:
     std::ofstream file_out;
     unsigned int freq_table[256];
     std::pair<int, int> codes[256];
+    HNode* tree_root;
+
+    void delete_tree(HNode* v);
 
     void open_files_analysis(const std::string& filename);
 
@@ -38,8 +40,12 @@ private:
 
     void make_codes(HNode* node, int code, int length);
 
+    static void go_tree(HNode*& node, bool move);
+
 public:
     Huffman();
 
     void encode(const std::string& filename);
+
+    void decode(const std::string& filename);
 };

@@ -22,6 +22,14 @@ HNode::HNode(HNode* nl, HNode* nr) {
     priority = nl->priority + nr->priority;
 }
 
+void Huffman::delete_tree(HNode* v) {
+    if (v == nullptr) {
+        return;
+    }
+    delete_tree(v->l);
+    delete_tree(v->r);
+    delete v;
+}
 
 void Huffman::open_files_analysis(const std::string& filename) {
     file_in.open(filename);
@@ -84,23 +92,34 @@ void Huffman::make_codes(HNode* node, int code, int length) {
     make_codes(node->r, code | (1 << length), length + 1);
 }
 
-Huffman::Huffman() = default;
+void Huffman::go_tree(HNode*& node, bool move) {
+    if (!move) {
+        node = node->l;
+    }
+    else {
+        node = node->r;
+    }
+}
+
+Huffman::Huffman(): tree_root(nullptr){};
 
 void Huffman::encode(const std::string& filename) {
     open_files_analysis(filename);
     make_freq_table();
-    HNode* tree_root = make_tree();
+    if (tree_root != nullptr) {
+        delete_tree(tree_root);
+    }
+    tree_root = make_tree();
     std::fill(codes, codes + 256, std::make_pair(0, 0));
     make_codes(tree_root, 0, 0);
 
     char byte;
     unsigned char ubyte;
     unsigned char write_byte = 0;
-    char pos = 0;
+    unsigned char pos = 0;
     unsigned int cnt_bytes = 0;
 
-    // first element of encoded is number of bytes (only code-bytes)
-    // second element of encoded is length of the last byte
+    // first element of encoded is length of the last byte
     std::vector<unsigned char> encoded;
     while(file_in.get(byte)) {
         ubyte = (unsigned char)byte;
@@ -144,6 +163,10 @@ void Huffman::encode(const std::string& filename) {
         file_out.write((char*)&c, sizeof(c));
     }
 
+    for (unsigned int i : freq_table) {
+        std::cout << i << std::endl;
+    }
+
     // printing codes (for testing)
     for (int i = 0; i < 256; i++) {
         int length = codes[i].first;
@@ -158,6 +181,71 @@ void Huffman::encode(const std::string& filename) {
             }
         }
         std::cout << std::endl;
+    }
+
+    close_files();
+}
+
+void Huffman::decode(const std::string& filename) {
+    open_files_decompress(filename);
+
+    std::fill(freq_table, freq_table + 256, 0);
+    char byte;
+    unsigned char ubyte;
+    unsigned char k_chars[4];
+    for (unsigned int& symbol : freq_table) {
+        for (unsigned char& k_char : k_chars) {
+            file_in.get(byte);
+            ubyte = (unsigned char)byte;
+            k_char = ubyte;
+        }
+        unsigned int freq = chars_to_int(k_chars);
+        symbol = freq;
+    }
+    for (unsigned int i : freq_table) {
+        std::cout << i << std::endl;
+    }
+
+    if (tree_root != nullptr) {
+        delete_tree(tree_root);
+    }
+
+    tree_root = make_tree();
+    make_codes(tree_root, 0, 0);
+
+    for (unsigned char& k_char : k_chars) {
+        file_in.get(byte);
+        ubyte = (unsigned char)byte;
+        k_char = ubyte;
+    }
+
+    unsigned int cnt_bytes = chars_to_int(k_chars);
+    std::cout << cnt_bytes << std::endl;
+    file_in.get(byte);
+    ubyte = (unsigned char)byte;
+
+    unsigned char length_last = ubyte;
+    HNode* v = tree_root;
+
+    while(file_in.get(byte)) {
+        ubyte = (unsigned char)byte;
+        cnt_bytes--;
+        int end = 8;
+        if (cnt_bytes == 0) {
+            end = length_last;
+        }
+        for (int i = 0; i < end; i++) {
+            if ((1 << i) & ubyte) {
+                go_tree(v, true);
+            }
+            else {
+                go_tree(v, false);
+            }
+            if (v->contains) {
+                file_out << (char)v->symbol;
+                v = tree_root;
+            }
+        }
     }
 
     close_files();
