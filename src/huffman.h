@@ -4,14 +4,27 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <set>
+#include <queue>
 #include "utils.h"
+
+struct HNode {
+    bool contains;
+    unsigned char symbol;
+    HNode* l;
+    HNode* r;
+    unsigned int priority;
+    HNode();
+    HNode(unsigned char ubyte, unsigned int freq);
+    HNode(HNode* nl, HNode* nr);
+};
 
 class Huffman {
 private:
     std::ifstream file_in;
     std::ofstream file_out;
-    int freq_table[256];
-    std::pair<short, short> codes[256];
+    unsigned int freq_table[256];
+    std::pair<int, int> codes[256];
 
     void open_files_analysis(const std::string& filename);
 
@@ -21,13 +34,9 @@ private:
 
     void make_freq_table();
 
-    struct HNode;
-
-    class PriorityQueue;
-
     HNode* make_tree();
 
-    void make_codes(HNode* node, short code, short length);
+    void make_codes(HNode* node, int code, int length);
 
 public:
     Huffman();
