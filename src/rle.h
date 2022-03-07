@@ -5,6 +5,34 @@
 #include <string>
 #include <algorithm>
 
+/**
+* Structure for counting double polynomial hash of the string
+*/
+struct PolyHash {
+
+    const long long p1 = 179;
+    const long long p2 = 139;
+    const long long Mod1 = 556556107;
+    const long long Mod2 = 2e9 + 11;
+
+    std::vector<long long> powers1;
+    std::vector<long long> powers2;
+
+    std::vector<long long> pref1;
+    std::vector<long long> pref2;
+
+
+    explicit PolyHash(const std::basic_string<unsigned char>& str);
+
+    /**
+     * Get double hash for the substring
+     * @param l Left position
+     * @param r Right Postion
+     * @return Double hash
+     */
+    inline std::pair<long long, long long> operator() (int l, int r) const;
+};
+
 class RLE {
 private:
     const unsigned char MAX_REPEAT = 255;
@@ -17,11 +45,6 @@ private:
     void open_files_decompress(const std::string& filename);
 
     void close_files();
-
-    /**
-     * Structure for counting double polynomial hash of the string
-     */
-    struct PolyHash;
 
     /**
      * Burrows–Wheeler transform using polynomial hash

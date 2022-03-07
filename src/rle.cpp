@@ -1,6 +1,53 @@
 #include "rle.h"
 #include "utils.h"
 
+
+PolyHash::PolyHash(const std::basic_string<unsigned char>& str) {
+    std::size_t str_size = str.size();
+
+    // Count powers p1 ^ k and p2 ^ k, where k <= str_size
+    powers1.resize(str_size + 1);
+    powers2.resize(str_size + 1);
+    powers1[0] = 1;
+    powers2[0] = 1;
+    for (int i = 1; i <= str_size; i++) {
+        powers1[i] = (powers1[i - 1] * p1) % Mod1;
+    }
+    for (int i = 1; i <= str_size; i++) {
+        powers2[i] = (powers2[i - 1] * p2) % Mod2;
+    }
+
+    // Count prefix-hashes
+    pref1.resize(str_size);
+    pref2.resize(str_size);
+    pref1[0] = str[0];
+    pref2[0] = str[0];
+    for (int i = 1; i < str_size; i++) {
+        pref1[i] = (pref1[i - 1] * p1 + str[i]) % Mod1;
+        pref2[i] = (pref2[i - 1] * p2 + str[i]) % Mod2;
+    }
+}
+
+/**
+ * Get double hash for the substring
+ * @param l Left position
+ * @param r Right Postion
+ * @return Double hash
+ */
+inline std::pair<long long, long long> PolyHash::operator() (const int l, const int r) const {
+    long long big1 = pref1[r];
+    long long big2 = pref2[r];
+    long long small1 = 0;
+    long long small2 = 0;
+    if (l > 0) {
+        small1 = (pref1[l - 1] * powers1[r - l + 1]) % Mod1;
+        small2 = (pref2[l - 1] * powers2[r - l + 1]) % Mod2;
+    }
+    big1 = (big1 - small1 + Mod1) % Mod1;
+    big2 = (big2 - small2 + Mod2) % Mod2;
+    return std::make_pair(big1, big2);
+}
+
 void RLE::open_files_analysis(const std::string& filename) {
     file_in.open(filename);
     // Linux:
@@ -19,70 +66,6 @@ void RLE::close_files() {
 };
 
 /**
- * Structure for counting double polynomial hash of the string
- */
-struct RLE::PolyHash {
-
-    const long long p1 = 179;
-    const long long p2 = 139;
-    const long long Mod1 = 556556107;
-    const long long Mod2 = 2e9 + 11;
-
-    std::vector<long long> powers1;
-    std::vector<long long> powers2;
-
-    std::vector<long long> pref1;
-    std::vector<long long> pref2;
-
-
-    explicit PolyHash(const std::basic_string<unsigned char>& str) {
-        std::size_t str_size = str.size();
-
-        // Count powers p1 ^ k and p2 ^ k, where k <= str_size
-        powers1.resize(str_size + 1);
-        powers2.resize(str_size + 1);
-        powers1[0] = 1;
-        powers2[0] = 1;
-        for (int i = 1; i <= str_size; i++) {
-            powers1[i] = (powers1[i - 1] * p1) % Mod1;
-        }
-        for (int i = 1; i <= str_size; i++) {
-            powers2[i] = (powers2[i - 1] * p2) % Mod2;
-        }
-
-        // Count prefix-hashes
-        pref1.resize(str_size);
-        pref2.resize(str_size);
-        pref1[0] = str[0];
-        pref2[0] = str[0];
-        for (int i = 1; i < str_size; i++) {
-            pref1[i] = (pref1[i - 1] * p1 + str[i]) % Mod1;
-            pref2[i] = (pref2[i - 1] * p2 + str[i]) % Mod2;
-        }
-    }
-
-    /**
-     * Get double hash for the substring
-     * @param l Left position
-     * @param r Right Postion
-     * @return Double hash
-     */
-    inline std::pair<long long, long long> operator() (const int l, const int r) const {
-        long long big1 = pref1[r];
-        long long big2 = pref2[r];
-        long long small1 = 0;
-        long long small2 = 0;
-        if (l > 0) {
-            small1 = (pref1[l - 1] * powers1[r - l + 1]) % Mod1;
-            small2 = (pref2[l - 1] * powers2[r - l + 1]) % Mod2;
-        }
-        big1 = (big1 - small1 + Mod1) % Mod1;
-        big2 = (big2 - small2 + Mod2) % Mod2;
-        return std::make_pair(big1, big2);
-    }
-};
-
-/**
  * Burrows–Wheeler transform using polynomial hash
  * @param str Source string
  * @return Pair of transformation result and position of source string in the table of shifts
@@ -90,7 +73,7 @@ struct RLE::PolyHash {
 std::pair<std::basic_string<unsigned char>, unsigned int> RLE::bwt_encode_hash(const std::basic_string<unsigned char>& str) {
     std::basic_string<unsigned char> a = str + str;
     std::size_t n = str.size();
-    RLE::PolyHash hash(a);
+    PolyHash hash(a);
 
     // Make cyclic shifts (cyclic shift = position of the first element in the new string)
     std::vector<int> pos(n);

@@ -22,6 +22,10 @@ HNode::HNode(HNode* nl, HNode* nr) {
     priority = nl->priority + nr->priority;
 }
 
+/**
+ * Delete Huffman tree before each run of the algorithm
+ * @param v Huffman tree vertex
+ */
 void Huffman::delete_tree(HNode* v) {
     if (v == nullptr) {
         return;
@@ -48,6 +52,9 @@ void Huffman::close_files() {
     file_out.close();
 };
 
+/**
+ * Read file and find frequency for each symbol
+ */
 void Huffman::make_freq_table() {
     std::fill(freq_table, freq_table + 256, 0);
     char byte;
@@ -60,6 +67,10 @@ void Huffman::make_freq_table() {
     file_in.seekg(0);
 }
 
+/**
+ * Build Huffman tree
+ * @return Root of Huffman tree
+ */
 HNode* Huffman::make_tree() {
     auto comparator = [](HNode* a, HNode* b) {return a->priority > b->priority;};
     std::priority_queue<HNode*, std::vector<HNode*>, decltype(comparator)> queue(comparator);
@@ -83,6 +94,12 @@ HNode* Huffman::make_tree() {
     return root;
 }
 
+/**
+ * Build codes for symbols
+ * @param node Vertex of Huffman tree
+ * @param code Current code
+ * @param length Length of the current code
+ */
 void Huffman::make_codes(HNode* node, int code, int length) {
     if (node->contains) {
         codes[node->symbol] = {length, code};
@@ -92,6 +109,11 @@ void Huffman::make_codes(HNode* node, int code, int length) {
     make_codes(node->r, code | (1 << length), length + 1);
 }
 
+/**
+ * Going through the tree
+ * @param node Vertex of Huffman tree
+ * @param move Move to left son or to roght son
+ */
 void Huffman::go_tree(HNode*& node, bool move) {
     if (!move) {
         node = node->l;
@@ -103,6 +125,10 @@ void Huffman::go_tree(HNode*& node, bool move) {
 
 Huffman::Huffman(): tree_root(nullptr){};
 
+/**
+ * Huffman encoding
+ * @param filename Name of the file
+ */
 void Huffman::encode(const std::string& filename) {
     open_files_analysis(filename);
     make_freq_table();
@@ -186,6 +212,10 @@ void Huffman::encode(const std::string& filename) {
     close_files();
 }
 
+/**
+ * Huffman decoding
+ * @param filename Name of the file
+ */
 void Huffman::decode(const std::string& filename) {
     open_files_decompress(filename);
 
@@ -231,9 +261,13 @@ void Huffman::decode(const std::string& filename) {
         ubyte = (unsigned char)byte;
         cnt_bytes--;
         int end = 8;
+        // If it is the last byte
         if (cnt_bytes == 0) {
             end = length_last;
         }
+
+        // Going through the tree
+
         for (int i = 0; i < end; i++) {
             if ((1 << i) & ubyte) {
                 go_tree(v, true);
