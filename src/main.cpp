@@ -1,19 +1,16 @@
 #include "utils.h"
 #include "rle.h"
 #include "huffman.h"
+#include "lzw.h"
 
 
 int main() {
 
-//    RLE rle;
-//    std::string file = "Compress.cbp";
-//    rle.encode(file);
+    std::string file1 = "tom.doc";
+    std::string file2 = "/tmp/tom_docY_lzw.opt_lzw";
+    LZW lzw;
+    lzw.encode(file1);
+    lzw.decode(file2);
 
-    std::string file1 = "/tmp/war_peace_txtY_huf.opt_huf";
-    std::string file2 = "war_peace.txt";
-
-    Huffman huf;
-    huf.encode(file2);
-    huf.decode(file1);
     return 0;
 }
